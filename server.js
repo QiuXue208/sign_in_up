@@ -39,14 +39,24 @@ const server = http.createServer(function (request, response) {
       let strings = bodyData.split('&');
       strings.forEach((string) => {
         let parts = string.split('=');
-        hash[parts[0]] = parts[1];
+        hash[parts[0]] = decodeURIComponent(parts[1]);
       });
-      let { email, password } = hash;
+      let { email, password, password_confirmation } = hash;
       if (email.indexOf('@') === -1) {
         response.statusCode = 400;
-        response.setHeader('Content-Type', 'application/json;charset=utf-8');
-        response.write('请填写正确的邮箱格式');
+        response.write('email is not valid');
+      } else if (password !== password_confirmation) {
+        response.statusCode = 400;
+        response.write('password not match');
       } else {
+        let users = fs.readFileSync('./db/users', 'utf8');
+        try {
+          users = JSON.parse(users);
+        } catch (e) {
+          users = [];
+        }
+        users.push({ email: email, password: password });
+        fs.writeFileSync('./db/users', JSON.stringify(users));
         response.statusCode = 200;
       }
       response.end();
