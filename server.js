@@ -72,6 +72,48 @@ const server = http.createServer(function (request, response) {
       }
       response.end();
     });
+  } else if (path === '/sign_in' && method === 'GET') {
+    let string = fs.readFileSync('./sign_in.html', 'utf-8');
+    response.statusCode === 400;
+    response.setHeader('Content-Type', 'text/html;charset=utf8');
+    response.write(string);
+    response.end();
+  } else if (path === '/sign_in' && method === 'POST') {
+    readBody(request).then((bodyData) => {
+      let hash = {};
+      let strings = bodyData.split('&');
+      strings.forEach((str) => {
+        let parts = str.split('=');
+        hash[parts[0]] = decodeURIComponent(parts[1]);
+      });
+      let { email, password } = hash;
+      let users = fs.readFileSync('./db/users', 'utf8');
+      let emails = [];
+      try {
+        users = JSON.parse(users);
+      } catch (e) {
+        users = [];
+      }
+      users.forEach((user) => emails.push(user.email));
+      if (emails.indexOf(email) === -1) {
+        // 认证失败
+        response.statusCode = 401;
+        response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+        response.write('无此用户');
+        response.end();
+      } else {
+        let signInUser = users.find((user) => user.email === email);
+        if (signInUser.password !== password) {
+          response.statusCode = 401;
+          response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+          response.write('密码错误');
+          response.end();
+        } else {
+          response.statusCode = 200;
+          response.end();
+        }
+      }
+    });
   } else {
     response.statusCode = 404;
     response.setHeader('Content-Type', 'text/html;charset=utf-8');
