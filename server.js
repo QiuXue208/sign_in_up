@@ -23,6 +23,32 @@ const server = http.createServer(function (request, response) {
 
   if (path === '/') {
     let string = fs.readFileSync('./index.html', 'utf8');
+    let users = fs.readFileSync('./db/users', 'utf8');
+    try {
+      users = JSON.parse(users);
+    } catch (e) {
+      users = [];
+    }
+
+    // 先拿到请求头的cookie
+    // 可能会存在多个cookie sign_in_email=1@qq.com;a=1;b=2
+    let cookies = request.headers.cookie;
+    let splitCookies = cookies && cookies.split(';');
+    let cookieValue;
+    splitCookies &&
+      splitCookies.some((cookie) => {
+        let splitCookie = cookie.split('=');
+        if (splitCookie[0] === 'sign_in_email') {
+          cookieValue = splitCookie[1];
+          return true;
+        }
+      });
+    let foundUser = users.find((user) => user.email === cookieValue);
+    if (foundUser) {
+      string = string.replace('__password__', foundUser.password);
+    } else {
+      string = string.replace('__password__', '请先登录');
+    }
     response.statusCode = 200;
     response.setHeader('Content-Type', 'text/html;charset=utf-8');
     response.write(string);
@@ -54,16 +80,16 @@ const server = http.createServer(function (request, response) {
 
       if (email.indexOf('@') === -1) {
         response.statusCode = 400;
-        response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+        response.setHeader('Content-Type', 'text/plain;charset=utf-8');
         response.write('邮箱格式错误');
       } else if (password !== password_confirmation) {
         response.statusCode = 400;
-        response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+        response.setHeader('Content-Type', 'text/plain;charset=utf-8');
         response.write('密码不匹配');
       } else if (emails.indexOf(email) !== -1) {
         // 如果注册信息重复
         response.statusCode = 400;
-        response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+        response.setHeader('Content-Type', 'text/plain;charset=utf-8');
         response.write('该用户已存在');
       } else {
         users.push({ email: email, password: password });
@@ -88,28 +114,30 @@ const server = http.createServer(function (request, response) {
       });
       let { email, password } = hash;
       let users = fs.readFileSync('./db/users', 'utf8');
-      let emails = [];
       try {
         users = JSON.parse(users);
       } catch (e) {
         users = [];
       }
-      users.forEach((user) => emails.push(user.email));
-      if (emails.indexOf(email) === -1) {
+
+      let signInUser = users.find((user) => user.email === email);
+      if (!signInUser.email) {
         // 认证失败
         response.statusCode = 401;
-        response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+        response.setHeader('Content-Type', 'text/plain;charset=utf-8');
         response.write('无此用户');
         response.end();
       } else {
-        let signInUser = users.find((user) => user.email === email);
         if (signInUser.password !== password) {
           response.statusCode = 401;
-          response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+          response.setHeader('Content-Type', 'text/plain;charset=utf-8');
           response.write('密码错误');
           response.end();
         } else {
+          // 成功登录
           response.statusCode = 200;
+          // Set-Cookie: <cookie-name>=<cookie-value>
+          response.setHeader('Set-Cookie', [`sign_in_email=${email}`]);
           response.end();
         }
       }
