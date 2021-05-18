@@ -42,19 +42,30 @@ const server = http.createServer(function (request, response) {
         hash[parts[0]] = decodeURIComponent(parts[1]);
       });
       let { email, password, password_confirmation } = hash;
+      // 从库中读取已有的用户信息
+      let users = fs.readFileSync('./db/users', 'utf8');
+      let emails = [];
+      try {
+        users = JSON.parse(users);
+      } catch (e) {
+        users = [];
+      }
+      users.map((item) => emails.push(item.email));
+
       if (email.indexOf('@') === -1) {
         response.statusCode = 400;
-        response.write('email is not valid');
+        response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+        response.write('邮箱格式错误');
       } else if (password !== password_confirmation) {
         response.statusCode = 400;
-        response.write('password not match');
+        response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+        response.write('密码不匹配');
+      } else if (emails.indexOf(email) !== -1) {
+        // 如果注册信息重复
+        response.statusCode = 400;
+        response.setHeader('Content-Type', 'text/plain;;charset=utf-8');
+        response.write('该用户已存在');
       } else {
-        let users = fs.readFileSync('./db/users', 'utf8');
-        try {
-          users = JSON.parse(users);
-        } catch (e) {
-          users = [];
-        }
         users.push({ email: email, password: password });
         fs.writeFileSync('./db/users', JSON.stringify(users));
         response.statusCode = 200;

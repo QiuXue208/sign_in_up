@@ -95,7 +95,8 @@
           console.log(response)
         },
         (error) => {
-          console.log(error)
+          let { responseText } = error;
+          window.alert(responseText);
         }
       )
     })
