@@ -73,6 +73,10 @@
         $form.find('[name="email"]').siblings('.error').text('请填写邮箱');
         return;
       }
+      if(hash['email'].indexOf('@') === -1) {
+        $form.find('[name="email"]').siblings('.error').text('邮箱格式错误');
+        return;
+      }
       if (hash['password'] === '') {
         $form.find('[name="password"]').siblings('.error').text('请填写密码');
         return;
