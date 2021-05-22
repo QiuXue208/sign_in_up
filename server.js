@@ -153,14 +153,16 @@ const server = http.createServer(function (request, response) {
     let string = fs.readFileSync('./css/default.css');
     response.statusCode = 200;
     response.setHeader('Content-Type', 'text/css;charset=utf-8');
-    response.setHeader('Cache-Control', 'max-age=30');
+    response.setHeader('Cache-Control', 'max-age=300000');
+    response.setHeader('Expires', 'Sat, 22 May 2021 14:17:38 GMT');
     response.write(string);
     response.end();
   } else if (path === '/js/main.js') {
     let string = fs.readFileSync('./js/main.js');
     response.statusCode = 200;
     response.setHeader('Content-Type', 'application/javascript;charset=utf-8');
-    response.setHeader('Cache-Control', 'max-age=30');
+    response.setHeader('Cache-Control', 'max-age=30000');
+    response.setHeader('Expires', 'Sat, 22 May 2021 14:17:38 GMT');
     console.log('js请求来了');
     response.write(string);
     response.end();
