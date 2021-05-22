@@ -9,6 +9,8 @@ if (!port) {
   process.exit(1);
 }
 
+let sessions = {};
+
 const server = http.createServer(function (request, response) {
   var parsedUrl = url.parse(request.url, true);
   var pathWithQuery = request.url;
@@ -38,8 +40,11 @@ const server = http.createServer(function (request, response) {
     splitCookies &&
       splitCookies.some((cookie) => {
         let splitCookie = cookie.split('=');
-        if (splitCookie[0] === 'sign_in_email') {
-          cookieValue = splitCookie[1];
+        if ((splitCookie[0] && splitCookie[0].trim()) === 'sessionId') {
+          let ss = sessions[splitCookie[1]];
+          if (ss) {
+            cookieValue = ss.email;
+          }
           return true;
         }
       });
@@ -137,7 +142,9 @@ const server = http.createServer(function (request, response) {
           // 成功登录
           response.statusCode = 200;
           // Set-Cookie: <cookie-name>=<cookie-value>
-          response.setHeader('Set-Cookie', [`sign_in_email=${email}`]);
+          let sessionId = Math.random() * 100000;
+          sessions[sessionId] = { email: email };
+          response.setHeader('Set-Cookie', [`sessionId=${sessionId}`]);
           response.end();
         }
       }
