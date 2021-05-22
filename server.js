@@ -149,6 +149,21 @@ const server = http.createServer(function (request, response) {
         }
       }
     });
+  } else if (path === '/css/default.css') {
+    let string = fs.readFileSync('./css/default.css');
+    response.statusCode = 200;
+    response.setHeader('Content-Type', 'text/css;charset=utf-8');
+    response.setHeader('Cache-Control', 'max-age=30');
+    response.write(string);
+    response.end();
+  } else if (path === '/js/main.js') {
+    let string = fs.readFileSync('./js/main.js');
+    response.statusCode = 200;
+    response.setHeader('Content-Type', 'application/javascript;charset=utf-8');
+    response.setHeader('Cache-Control', 'max-age=30');
+    console.log('js请求来了');
+    response.write(string);
+    response.end();
   } else {
     response.statusCode = 404;
     response.setHeader('Content-Type', 'text/html;charset=utf-8');
