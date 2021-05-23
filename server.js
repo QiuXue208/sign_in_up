@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const url = require('url');
+const md5 = require('md5');
 //process.argv返回命令参数
 const port = process.argv[2];
 
@@ -150,7 +151,7 @@ const server = http.createServer(function (request, response) {
       }
     });
   } else if (path === '/css/default.css') {
-    let string = fs.readFileSync('./css/default.css');
+    let string = fs.readFileSync('./css/default.css', 'utf8');
     response.statusCode = 200;
     response.setHeader('Content-Type', 'text/css;charset=utf-8');
     response.setHeader('Cache-Control', 'max-age=300000');
@@ -158,13 +159,25 @@ const server = http.createServer(function (request, response) {
     response.write(string);
     response.end();
   } else if (path === '/js/main.js') {
-    let string = fs.readFileSync('./js/main.js');
-    response.statusCode = 200;
-    response.setHeader('Content-Type', 'application/javascript;charset=utf-8');
-    response.setHeader('Cache-Control', 'max-age=30000');
-    response.setHeader('Expires', 'Sat, 22 May 2021 14:17:38 GMT');
-    console.log('js请求来了');
-    response.write(string);
+    let string = fs.readFileSync('./js/main.js', 'utf8');
+    let fileMd5 = md5(string);
+    // response.setHeader('Cache-Control', 'max-age=30000');
+    // response.setHeader('Expires', 'Sat, 22 May 2021 14:17:38 GMT');
+
+    if (request.headers['if-none-match'] === fileMd5) {
+      // 没有响应体
+      // 304 not modified
+      response.statusCode = 304;
+    } else {
+      // 有响应体，需要下载
+      response.statusCode = 200;
+      response.setHeader(
+        'Content-Type',
+        'application/javascript;charset=utf-8',
+      );
+      response.setHeader('ETag', fileMd5);
+      response.write(string);
+    }
     response.end();
   } else {
     response.statusCode = 404;
